@@ -22,27 +22,43 @@ func main{output_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, bitwis
     local public_key: EcPoint;  
 
     %{
-        import sys, os
-        cwd = os.getcwd()
-        sys.path.append(cwd)
+        alpha_G_x = program_input['alpha_G_x']
+        alpha_G_y = program_input['alpha_G_y']
+        response = program_input['response']
+        public_key_x = program_input['public_key_x']
+        public_key_y = program_input['public_key_y']
 
-        from src.schnorrpy import SchnorrSignature
-        
-        secret = 12
-        schnorr = SchnorrSignature()
-        (alpha, response, pk) = schnorr.prove(secret)
-        print("Off-chain proof sent")
-        schnorr.verify(alpha, response, pk)
-        print("Off-chain verification done")
-        print("Assertting on-chain verification")
-        print("If there is no error, on-chain verification is completed")
-
-        ids.alpha_G.x = alpha.x
-        ids.alpha_G.y = alpha.y
+        ids.alpha_G.x = alpha_G_x
+        ids.alpha_G.y = alpha_G_y
         ids.response = response
-        ids.public_key.x = pk.x
-        ids.public_key.y = pk.y
+        ids.public_key.x = public_key_x
+        ids.public_key.y = public_key_y
     %}
+
+    // %{
+    //     import sys, os
+    //     cwd = os.getcwd()
+    //     sys.path.append(cwd)
+
+    //     from src.schnorrpy import SchnorrSignature
+        
+    //     secret = 12
+    //     schnorr = SchnorrSignature()
+    //     (alpha, response, pk) = schnorr.prove(secret)
+    //     print("Off-chain proof sent")
+    //     schnorr.verify(alpha, response, pk)
+    //     print("Off-chain verification done")
+    //     print("Assertting on-chain verification")
+    //     print("If there is no error, on-chain verification is completed")
+
+    //     ids.alpha_G.x = alpha.x
+    //     ids.alpha_G.y = alpha.y
+    //     ids.response = response
+    //     ids.public_key.x = pk.x
+    //     ids.public_key.y = pk.y
+
+    //     print(alpha.x, alpha.y, response, pk.x, pk.y)
+    // %}
 
     verify_schnorr_signature(alpha_G = alpha_G, response = response, public_key = public_key);
 
