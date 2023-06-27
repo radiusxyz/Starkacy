@@ -6,61 +6,86 @@ from starkware.cairo.common.cairo_builtins import EcOpBuiltin
 from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
 from starkware.cairo.common.serialize import serialize_word
 from src.math_utils import ec_mul
-from src.schnorr import verify_schnorr_signature
+from src.schnorr import verify_schnorr_signature_bn254
 from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.hash import hash2
 
 func main{output_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ec_op_ptr: EcOpBuiltin*}() {
     alloc_locals;
 
-    local message: felt;
-    local blinding_factor: felt;
-    local commitment: EcPoint;
-
-    local alpha_G: EcPoint;
-    local response: felt;
-    local public_key: EcPoint;  
-
-    %{
-        alpha_G_x = program_input['alpha_G_x']
-        alpha_G_y = program_input['alpha_G_y']
-        response = program_input['response']
-        public_key_x = program_input['public_key_x']
-        public_key_y = program_input['public_key_y']
-
-        ids.alpha_G.x = alpha_G_x
-        ids.alpha_G.y = alpha_G_y
-        ids.response = response
-        ids.public_key.x = public_key_x
-        ids.public_key.y = public_key_y
-    %}
+    local alpha_G_x_low: felt;
+    local alpha_G_x_high: felt;
+    local alpha_G_y_low: felt;
+    local alpha_G_y_high: felt;
+    local mod_alpha_G_x: felt;
+    local mod_alpha_G_y: felt;
+    local response_low: felt;
+    local response_high: felt;
+    local public_key_x_low: felt;
+    local public_key_x_high: felt;
+    local public_key_y_low: felt;
+    local public_key_y_high: felt;
 
     // %{
-    //     import sys, os
-    //     cwd = os.getcwd()
-    //     sys.path.append(cwd)
+    //     alpha_G_x = program_input['alpha_G_x']
+    //     alpha_G_y = program_input['alpha_G_y']
+    //     response = program_input['response']
+    //     public_key_x = program_input['public_key_x']
+    //     public_key_y = program_input['public_key_y']
 
-    //     from src.schnorrpy import SchnorrSignature
-        
-    //     secret = 12
-    //     schnorr = SchnorrSignature()
-    //     (alpha, response, pk) = schnorr.prove(secret)
-    //     print("Off-chain proof sent")
-    //     schnorr.verify(alpha, response, pk)
-    //     print("Off-chain verification done")
-    //     print("Assertting on-chain verification")
-    //     print("If there is no error, on-chain verification is completed")
-
-    //     ids.alpha_G.x = alpha.x
-    //     ids.alpha_G.y = alpha.y
+    //     ids.alpha_G_x = alpha_G_x
+    //     ids.alpha_G_y = alpha_G_y
     //     ids.response = response
-    //     ids.public_key.x = pk.x
-    //     ids.public_key.y = pk.y
-
-    //     print(alpha.x, alpha.y, response, pk.x, pk.y)
+    //     ids.public_key_x = public_key_x
+    //     ids.public_key_y = public_key_y
     // %}
 
-    verify_schnorr_signature(alpha_G = alpha_G, response = response, public_key = public_key);
+    %{
+        import sys, os
+        cwd = os.getcwd()
+        sys.path.append(cwd)
+
+        from src.schnorrpy import SchnorrSignatureBN254
+        
+        secret = 12
+        schnorr = SchnorrSignatureBN254()
+        (alpha, response, pk) = schnorr.prove(secret)
+        print("Off-chain proof sent")
+        schnorr.verify(alpha, response, pk)
+        print("Off-chain verification done")
+        print("Assertting on-chain verification")
+        print("If there is no error, on-chain verification is completed")
+
+        FIELD_PRIME = 3618502788666131213697322783095070105623107215331596699973092056135872020481
+
+        ids.alpha_G_x_low = alpha.x & ((1<<128) - 1)
+        ids.alpha_G_x_high = alpha.x >> 128
+        ids.alpha_G_y_low = alpha.y & ((1<<128) - 1)
+        ids.alpha_G_y_high = alpha.y >> 128
+        ids.mod_alpha_G_x = (alpha.x % FIELD_PRIME)
+        ids.mod_alpha_G_y = (alpha.y % FIELD_PRIME)
+        ids.response_low = response & ((1<<128) - 1)
+        ids.response_high = response >> 128
+        ids.public_key_x_low = pk.x & ((1<<128) - 1)
+        ids.public_key_x_high = pk.x >> 128
+        ids.public_key_y_low = pk.y & ((1<<128) - 1)
+        ids.public_key_y_high = pk.y >> 128
+    %}
+
+    verify_schnorr_signature_bn254(
+        alpha_G_x_low,
+        alpha_G_x_high,
+        alpha_G_y_low,
+        alpha_G_y_high,
+        mod_alpha_G_x,
+        mod_alpha_G_y,
+        response_low,
+        response_high,
+        public_key_x_low,
+        public_key_x_high,
+        public_key_y_low,
+        public_key_y_high
+    );
 
     return ();
 }
