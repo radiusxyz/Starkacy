@@ -1,14 +1,12 @@
-from starkware.cairo.common.cairo_keccak.keccak import keccak_uint256s, keccak_felts, finalize_keccak
 from starkware.cairo.common.alloc import alloc
 from starkware.cairo.common.ec_point import EcPoint
 from starkware.cairo.common.ec import assert_on_curve, ec_add, ec_double, ec_op
-from starkware.cairo.common.cairo_builtins import EcOpBuiltin
 from src.math_utils import ec_mul, felt_to_uint256, uint256_to_felt
 from src.constants import BASE_POINT_X, BASE_POINT_Y
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import EcOpBuiltin, BitwiseBuiltin, HashBuiltin, PoseidonBuiltin
+from starkware.cairo.common.builtin_poseidon.poseidon import poseidon_hash
 from starkware.cairo.common.uint256 import Uint256, uint256_unsigned_div_rem, split_64
 from starkware.cairo.common.serialize import serialize_word
-from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.hash import hash2
 from starkware.cairo.common.registers import get_fp_and_pc
 
@@ -50,7 +48,7 @@ func split_128{range_check_ptr}(a: felt) -> (low: felt, high: felt) {
 }
 
 
-func verify_schnorr_signature_bn254{output_ptr : felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin*, ec_op_ptr: EcOpBuiltin*}(
+func verify_schnorr_signature_bn254{output_ptr : felt*, poseidon_ptr: PoseidonBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin*, ec_op_ptr: EcOpBuiltin*}(
     alpha_G_x_low : felt, 
     alpha_G_x_high : felt, 
     alpha_G_y_low: felt, 
@@ -86,7 +84,7 @@ func verify_schnorr_signature_bn254{output_ptr : felt*, pedersen_ptr: HashBuilti
 
     local public_key: G1PointFull = G1PointFull(x=pub_x_bigint, y=pub_y_bigint);
 
-    let (_challenge) = hash2{hash_ptr=pedersen_ptr}(mod_alpha_G_x, mod_alpha_G_y);
+    let (_challenge) = poseidon_hash{poseidon_ptr=poseidon_ptr}(mod_alpha_G_x, mod_alpha_G_y);
 
     let (chal_low, chal_high) = split_128(_challenge);
     let chal_uint: Uint256 = Uint256(chal_low, chal_high);

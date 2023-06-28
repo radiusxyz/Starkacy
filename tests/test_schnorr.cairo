@@ -1,16 +1,14 @@
-%builtins output pedersen range_check bitwise ec_op
+%builtins output range_check bitwise ec_op poseidon
 
 from starkware.cairo.common.ec_point import EcPoint
 from starkware.cairo.common.ec import assert_on_curve, ec_add, ec_double, ec_op
-from starkware.cairo.common.cairo_builtins import EcOpBuiltin
-from starkware.cairo.common.cairo_builtins import BitwiseBuiltin
+from starkware.cairo.common.cairo_builtins import EcOpBuiltin, BitwiseBuiltin, HashBuiltin, PoseidonBuiltin
 from starkware.cairo.common.serialize import serialize_word
 from src.math_utils import ec_mul
 from src.schnorr import verify_schnorr_signature_bn254
-from starkware.cairo.common.cairo_builtins import HashBuiltin
 from starkware.cairo.common.hash import hash2
 
-func main{output_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ec_op_ptr: EcOpBuiltin*}() {
+func main{output_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ec_op_ptr: EcOpBuiltin*, poseidon_ptr: PoseidonBuiltin*}() {
     alloc_locals;
 
     local alpha_G_x_low: felt;
