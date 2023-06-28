@@ -113,23 +113,23 @@ func verify_schnorr_signature_bn254{output_ptr : felt*, poseidon_ptr: PoseidonBu
 
     // local R: G1PointFull = G1PointFull(x=R_x_bigint, y=R_y_bigint);
 
-
     let (test) = poseidon_hash{poseidon_ptr=poseidon_ptr}(P_u_x, P_u_y);
     serialize_word(test);
 
-    let (l_list: felt*) = alloc();
-    assert[l_list]     = P_u_x;
-    assert[l_list + 1] = P_u_y;
-    assert[l_list + 2] = P_s_x;
-    assert[l_list + 3] = P_s_y;
-
-    let (l) = poseidon_hash_many{poseidon_ptr=poseidon_ptr}(4, l_list);
-    serialize_word(l);
-
-    let (low, high) = split_128(P_s_x);
+    serialize_word(P_u_x);
+    serialize_word(P_u_y);
     serialize_word(P_s_x);
-    serialize_word(high);
-    serialize_word(low);
+    serialize_word(P_s_y);
+
+    // let (l_list: felt*) = alloc();
+    // assert[l_list]     = P_u_x;
+    // assert[l_list + 1] = P_u_y;
+    // assert[l_list + 2] = P_s_x;
+    // assert[l_list + 3] = P_s_y;
+
+    // let (l) = poseidon_hash_many{poseidon_ptr=poseidon_ptr}(4, l_list);
+    // serialize_word(l);
+
 
     // let (_challenge) = poseidon_hash{poseidon_ptr=poseidon_ptr}(mod_alpha_G_x, mod_alpha_G_y);
 

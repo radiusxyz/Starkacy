@@ -80,8 +80,7 @@ class SchnorrSignatureBN254:
         # w_s = poseidon_hash(l, poseidon_hash(P_s.x, P_s.y))
         l_list = [P_u.x, P_u.y, P_s.x, P_s.y]
         l = poseidon_hash_many(l_list)
-        print(poseidon_hash(P_u.x,P_u.y))
-        print(l)
+        print('hash test: ', poseidon_hash(P_u.x % FIELD_PRIME, P_u.y % FIELD_PRIME))
         w_u_list = [l, P_u.x, P_u.y]
         w_u = poseidon_hash_many(w_u_list)
         w_s_list = [l, P_s.x, P_s.y]
