@@ -11,42 +11,22 @@ from starkware.cairo.common.hash import hash2
 func main{output_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ec_op_ptr: EcOpBuiltin*, poseidon_ptr: PoseidonBuiltin*}() {
     alloc_locals;
 
-    // local alpha_G_x_low: felt;
-    // local alpha_G_x_high: felt;
-    // local alpha_G_y_low: felt;
-    // local alpha_G_y_high: felt;
-    // local mod_alpha_G_x: felt;
-    // local mod_alpha_G_y: felt;
-    // local response_low: felt;
-    // local response_high: felt;
-    // local public_key_x_low: felt;
-    // local public_key_x_high: felt;
-    // local public_key_y_low: felt;
-    // local public_key_y_high: felt;
-
-    local P_s_x: felt;
-    local P_s_y: felt;
-    local P_u_x: felt;
-    local P_u_y: felt;
+    local P_s_x_low: felt;
+    local P_s_x_high: felt;
+    local P_s_y_low: felt;
+    local P_s_y_high: felt;
+    local P_u_x_low: felt;
+    local P_u_x_high: felt;
+    local P_u_y_low: felt;
+    local P_u_y_high: felt;
     local s: felt;
-    local R_x: felt;
-    local R_y: felt;
+    local R_x_low: felt;
+    local R_x_high: felt;
+    local R_y_low: felt;
+    local R_y_high: felt;
     local i: felt;
-    local m: felt;
-
-    // %{
-    //     alpha_G_x = program_input['alpha_G_x']
-    //     alpha_G_y = program_input['alpha_G_y']
-    //     response = program_input['response']
-    //     public_key_x = program_input['public_key_x']
-    //     public_key_y = program_input['public_key_y']
-
-    //     ids.alpha_G_x = alpha_G_x
-    //     ids.alpha_G_y = alpha_G_y
-    //     ids.response = response
-    //     ids.public_key_x = public_key_x
-    //     ids.public_key_y = public_key_y
-    // %}
+    local m_low: felt;
+    local m_high: felt;
 
     %{
         import sys, os
@@ -54,11 +34,19 @@ func main{output_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ec_o
         sys.path.append(cwd)
 
         from src.schnorrpy import SchnorrSignatureBN254
+        from starkware.cairo.common.cairo_secp.secp_utils import split
+
+        def to_field_element(val: int, prime: int) -> int:
+            """
+            Converts val to an integer in the range (-prime/2, prime/2) which is
+            equivalent to val modulo prime.
+            """
+            half_prime = prime // 2
+            return ((val + half_prime) % prime) - half_prime
         
-        k_u = 12
-        k_s = 2
+
         schnorr = SchnorrSignatureBN254()
-        (P_s, P_u, s, R, i, m) = schnorr.prove(k_u, k_s)
+        (P_s, P_u, s, R, i, m) = schnorr.prove()
         print("Off-chain proof sent")
         schnorr.verify(P_s, P_u ,s, R, i, m)
         print("Off-chain verification done")
@@ -66,62 +54,45 @@ func main{output_ptr: felt*, range_check_ptr, bitwise_ptr: BitwiseBuiltin*, ec_o
         print("If there is no error, on-chain verification is completed")
 
         FIELD_PRIME = 3618502788666131213697322783095070105623107215331596699973092056135872020481
+        s_felt = to_field_element(s, FIELD_PRIME)
+        print('s_felt: ', s_felt)
+        print(s_felt & ((1<<128) - 1), s_felt >> 128)
 
-        # ids.alpha_G_x_low = alpha.x & ((1<<128) - 1)
-        # ids.alpha_G_x_high = alpha.x >> 128
-        # ids.alpha_G_y_low = alpha.y & ((1<<128) - 1)
-        # ids.alpha_G_y_high = alpha.y >> 128
-        # ids.mod_alpha_G_x = (alpha.x % FIELD_PRIME)
-        # ids.mod_alpha_G_y = (alpha.y % FIELD_PRIME)
-        # ids.response_low = response & ((1<<128) - 1)
-        # ids.response_high = response >> 128
-        # ids.public_key_x_low = pk.x & ((1<<128) - 1)
-        # ids.public_key_x_high = pk.x >> 128
-        # ids.public_key_y_low = pk.y & ((1<<128) - 1)
-        # ids.public_key_y_high = pk.y >> 128
-
-        ids.P_s_x = P_s.x % FIELD_PRIME
-        ids.P_s_y = P_s.y % FIELD_PRIME
-        ids.P_u_x = P_u.x % FIELD_PRIME
-        ids.P_u_y = P_u.x % FIELD_PRIME
-        ids.s = s
-        ids.R_x = R.x
-        ids.R_y = R.y
+        ids.P_s_x_low = P_s.x & ((1<<128) - 1)
+        ids.P_s_x_high = P_s.x >> 128
+        ids.P_s_y_low = P_s.y & ((1<<128) - 1)
+        ids.P_s_y_high = P_s.y >> 128
+        ids.P_u_x_low = P_u.x & ((1<<128) - 1)
+        ids.P_u_x_high = P_u.x >> 128
+        ids.P_u_y_low = P_u.y & ((1<<128) - 1)
+        ids.P_u_y_high = P_u.y >> 128
+        ids.s = to_field_element(s, FIELD_PRIME)
+        ids.R_x_low = R.x & ((1<<128) - 1)
+        ids.R_x_high = R.x >> 128
+        ids.R_y_low = R.y & ((1<<128) - 1)
+        ids.R_y_high = R.y >> 128
         ids.i = i
-        ids.m = m
-
-        print(P_u.x, P_u.x % FIELD_PRIME)
-        print(P_u.y, P_u.y % FIELD_PRIME)
-        print(P_s.x, P_s.x % FIELD_PRIME)
-        print(P_s.y, P_s.y % FIELD_PRIME)
-        # print(P_u.x >> 128, P_u.x & ((1<<128) - 1))
+        ids.m_low = m & ((1<<128) - 1)
+        ids.m_high = m >> 128
     %}
 
-    // verify_schnorr_signature_bn254(
-    //     alpha_G_x_low,
-    //     alpha_G_x_high,
-    //     alpha_G_y_low,
-    //     alpha_G_y_high,
-    //     mod_alpha_G_x,
-    //     mod_alpha_G_y,
-    //     response_low,
-    //     response_high,
-    //     public_key_x_low,
-    //     public_key_x_high,
-    //     public_key_y_low,
-    //     public_key_y_high
-    // );
-
     verify_schnorr_signature_bn254(
-        P_s_x,
-        P_s_y,
-        P_u_x,
-        P_u_y,
+        P_s_x_low,
+        P_s_x_high,
+        P_s_y_low,
+        P_s_y_high,
+        P_u_x_low,
+        P_u_x_high,
+        P_u_y_low,
+        P_u_y_high,
         s,
-        R_x,
-        R_y,
+        R_x_low,
+        R_x_high,
+        R_y_low,
+        R_y_high,
         i,
-        m
+        m_low,
+        m_high
     );
 
     return ();

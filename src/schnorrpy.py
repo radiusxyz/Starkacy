@@ -34,9 +34,10 @@ class SchnorrSignature:
         assert _R == _Rprime
 
 class SchnorrSignatureBN254:
-    def prove(self, k_u, k_s):
+    def prove(self):
         
         # user key and nonce
+        k_u = number.getRandomRange(1, BN128.q - 1)
         r_u = number.getRandomRange(1, BN128.q - 1)
         # r_u = 17349940748761793203113299844175377003983001038161293476542894180571014896327
         R_u = r_u * G_bn128
@@ -44,6 +45,7 @@ class SchnorrSignatureBN254:
         m = 1234
 
         # sequencer key and nonce
+        k_s = number.getRandomRange(1, BN128.q - 1)
         r_s = number.getRandomRange(1, BN128.q - 1)
         # r_s = 17349940748761793203113299844175377003983001038161293476542894180571014896327
         R_s = r_s * G_bn128
@@ -54,22 +56,61 @@ class SchnorrSignatureBN254:
         # l = poseidon_hash(poseidon_hash(P_u.x, P_u.y), poseidon_hash(P_s.x, P_s.y))
         # w_u = poseidon_hash(l, poseidon_hash(P_u.x, P_u.y))
         # w_s = poseidon_hash(l, poseidon_hash(P_s.x, P_s.y))
-        l_list = [P_u.x, P_u.y, P_s.x, P_s.y]
+        l_list = [  
+            P_u.x & ((1<<128) - 1), 
+            P_u.x >> 128, 
+            P_u.y & ((1<<128) - 1), 
+            P_u.y >> 128, 
+            P_s.x & ((1<<128) - 1), 
+            P_s.x >> 128, 
+            P_s.y & ((1<<128) - 1), 
+            P_s.y >> 128, 
+        ]
         l = poseidon_hash_many(l_list)
-        w_u_list = [l, P_u.x, P_u.y]
+        w_u_list = [
+            l & ((1<<128) - 1), 
+            l >> 128, 
+            P_u.x & ((1<<128) - 1), 
+            P_u.x >> 128, 
+            P_u.y & ((1<<128) - 1), 
+            P_u.y >> 128
+        ]
         w_u = poseidon_hash_many(w_u_list)
-        w_s_list = [l, P_s.x, P_s.y]
+        w_s_list = [
+            l & ((1<<128) - 1), 
+            l >> 128, 
+            P_s.x & ((1<<128) - 1), 
+            P_s.x >> 128, 
+            P_s.y & ((1<<128) - 1), 
+            P_s.y >> 128
+        ]
         w_s = poseidon_hash_many(w_s_list)
         X = w_u * P_u + w_s * P_s
         i = 1234
 
-        poseidon_list = [R.x, R.y, X.x, X.y, m, i]
+        poseidon_list = [
+            R.x & ((1<<128) - 1), 
+            R.x >> 128, 
+            R.y & ((1<<128) - 1), 
+            R.y >> 128, 
+            X.x & ((1<<128) - 1), 
+            X.x >> 128, 
+            X.y & ((1<<128) - 1), 
+            X.y >> 128, 
+            m & ((1<<128) - 1), 
+            m >> 128,
+            i
+        ]
         e = poseidon_hash_many(poseidon_list)
 
         # partial sig
         s_u = r_u + k_u * w_u * e
         s_s = r_s + k_s * w_s * e
         s = s_u + s_s
+
+        print('s_u: ', len(str(s_u)) )
+        print('s_s: ', s_s )
+        print('s: ', len(str(s)))
 
         return P_s, P_u ,s, R, i, m
 
@@ -78,18 +119,64 @@ class SchnorrSignatureBN254:
         # l = poseidon_hash(poseidon_hash(P_u.x, P_u.y), poseidon_hash(P_s.x, P_s.y))
         # w_u = poseidon_hash(l, poseidon_hash(P_u.x, P_u.y))
         # w_s = poseidon_hash(l, poseidon_hash(P_s.x, P_s.y))
-        l_list = [P_u.x, P_u.y, P_s.x, P_s.y]
+        l_list = [  
+            P_u.x & ((1<<128) - 1), 
+            P_u.x >> 128, 
+            P_u.y & ((1<<128) - 1), 
+            P_u.y >> 128, 
+            P_s.x & ((1<<128) - 1), 
+            P_s.x >> 128, 
+            P_s.y & ((1<<128) - 1), 
+            P_s.y >> 128, 
+        ]
         l = poseidon_hash_many(l_list)
-        print('hash test: ', poseidon_hash(P_u.x % FIELD_PRIME, P_u.y % FIELD_PRIME))
-        w_u_list = [l, P_u.x, P_u.y]
+        w_u_list = [
+            l & ((1<<128) - 1), 
+            l >> 128, 
+            P_u.x & ((1<<128) - 1), 
+            P_u.x >> 128, 
+            P_u.y & ((1<<128) - 1), 
+            P_u.y >> 128
+        ]
         w_u = poseidon_hash_many(w_u_list)
-        w_s_list = [l, P_s.x, P_s.y]
-        w_s = poseidon_hash_many(w_s_list)
-        X = w_u * P_u + w_s * P_s
+        print('w_u: ', w_u)
+        print(w_u & ((1<<128)-1), w_u >> 128)
 
-        poseidon_list = [R.x, R.y, X.x, X.y, m, i]
+        w_s_list = [
+            l & ((1<<128) - 1), 
+            l >> 128, 
+            P_s.x & ((1<<128) - 1), 
+            P_s.x >> 128, 
+            P_s.y & ((1<<128) - 1), 
+            P_s.y >> 128
+        ]
+        w_s = poseidon_hash_many(w_s_list)
+        print('w_s: ', w_s)
+        print(w_s & ((1<<128)-1), w_s >> 128)
+
+        X = w_u * P_u + w_s * P_s
+        print('X: ', X)
+
+        poseidon_list = [
+            R.x & ((1<<128) - 1), 
+            R.x >> 128, 
+            R.y & ((1<<128) - 1), 
+            R.y >> 128, 
+            X.x & ((1<<128) - 1), 
+            X.x >> 128, 
+            X.y & ((1<<128) - 1), 
+            X.y >> 128, 
+            m & ((1<<128) - 1), 
+            m >> 128,
+            i
+        ]
         e = poseidon_hash_many(poseidon_list)
+        print('e: ', e)
+        print(e & ((1<<128)-1), e >> 128)
+
 
         left = s * G_bn128
+        print('left low: ', left.x & ((1<<128) - 1))
+        print('left high: ', left.x  >> 128)
         right = R + e * X
         assert left == right
